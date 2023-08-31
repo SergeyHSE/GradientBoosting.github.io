@@ -11,10 +11,8 @@ from lightgbm import LGBMRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 
-path = r"your path"
-path = path.replace('\\', '/')
-path
-data = pd.read_csv(path, sep='\t')
+! wget https://www.dropbox.com/s/psutl0zafq50828/data.tsv > ./data.tsv
+data = pd.read_csv('./data.tsv', sep='\t')
 pd.set_option('display.max_columns', None)
 data.head()
 
