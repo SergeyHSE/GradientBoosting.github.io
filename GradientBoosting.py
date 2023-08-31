@@ -18,11 +18,21 @@ data = pd.read_csv(path, sep='\t')
 pd.set_option('display.max_columns', None)
 data.head()
 
+# Let's break our dataset into categorical and numeric features,
+# and for now we will work only with numeric ones
+
 num_features = ['agent_fee', 'floor', 'floors_total',
                 'kitchen_area', 'living_area', 'price',
                 'rooms_offered', 'total_area', 'total_images']
 cat_features = ['balcony', 'building_type', 'month', 'renovation', 'studio']
-X_train, X_test, y_train, y_test = train_test_split(data[num_features], data['exposition_time'], test_size=0.3, shuffle=False)
+
+X_train, X_test, y_train, y_test = train_test_split(data[num_features], data['exposition_time'],
+                                                    test_size=0.3, shuffle=False)
+
+#1
+# Let's train the implementation of gradient boosting Lightgdm and Cart boost on numerical features
+# without parameter selection
+# Then we calculate MAE and compare its between LightGBM and Catboost
 
 lg = LGBMRegressor(random_seed=0)
 %time lg.fit(X_train, y_train)
@@ -39,6 +49,11 @@ answer1 = (mae_lg - mae_cbr)
 print(answer1)
 
 #2
+# We are trying to select the optimal parameters for Catboost  using all available combinations of:
+# tree depths {5, 7, 9};
+# learning rate {0.05, 0.1, 0.5}
+# We will do it both methods: GridSearchCV and embedded in Catboost
+
 from sklearn.model_selection import GridSearchCV
 
 grid_searcher = GridSearchCV(CatBoostRegressor(random_seed=0, loss_function='MAE'),
@@ -68,8 +83,10 @@ y_pred_train = cbr.predict(X_train)
 mean_absolute_error(y_test, y_pred_cbr)
 feature_imp = cbr.feature_importances_
 
-
 #3
+# Now we calculate MAE by Catboost for numeric and categorial features
+
+
 X_train, X_test, y_train, y_test = train_test_split(data[num_features+cat_features],
                                                     data['exposition_time'], test_size=0.3, shuffle=False)
 
@@ -101,6 +118,9 @@ feature_imp_all.shape
 
 
 #4
+# we wil implement blending (getting responses from several models and taking them with weights
+# (they need to be selected on a training sample)) the models obtained in tasks 2 and 3
+# and output MAE on the test sample.
 
 def select_weights(y_true, y_pred_1, y_pred_2):
     metric = []
@@ -149,6 +169,9 @@ w_1
 print('test mae blending = %.4f' % mean_absolute_error(y_test, y_pred_cbr*w_0 + y_pred_cbr_all*w_1))
 
 #5
+# In Task 3, we selected hyperparameters for CatBoost on all signs.
+# We are visualizing their importance in the form of a horizontal barplot,
+# Then we will sort the signs in descending order of importance, sign the names of the signs along the y axis.
 
 feature_imp_all
 
@@ -165,6 +188,10 @@ features
 df = pd.DataFrame({'features':features, 'weights':weights})
 df
 ax = df.plot.barh(x='features', y='weights', rot=0)
+
+# For each of the two algorithms, we will remove the unimportant features 
+# and train the model with the same parameters on the remaining features.
+# Output the difference between the MAE values on the test sample before and after removing the features.
 
 num_features = ['agent_fee', 'floor', 'floors_total',
                 'kitchen_area', 'living_area', 'price',
